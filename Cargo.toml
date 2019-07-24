@@ -1,0 +1,10 @@
+[package]
+name = "hermit-rust"
+version = "0.1.0"
+authors = ["nick <scifi6546@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+nickel="*"
+serde={version="*", features=["derive"]}
+serde_json="*"
