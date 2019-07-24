@@ -13,15 +13,15 @@ pub struct User{
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 pub struct VideoConf{
-    video_path: String,
-    thumbnails: String,
-    playlists: Vec<u8>
+    pub video_path: String,
+    pub thumbnails: String,
+    pub playlists: Vec<u8>
 }
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 pub struct Config{
-    users:Vec<User>,
-    videos:VideoConf
+    pub users:Vec<User>,
+    pub videos:VideoConf
 
 }
 fn get_config()->std::io::Result<Config>{
