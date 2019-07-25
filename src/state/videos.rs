@@ -1,5 +1,4 @@
-use std::io;
-use std::fs::{self,DirEntry};
+use std::fs::{self};
 use std::path::Path;
 #[derive(Clone)]
 pub struct Video{
@@ -19,7 +18,7 @@ pub fn get_videos(read_dir:String)->Vec<Video>{
             name:"".to_string()};
         vid.path=entry.path().to_str().unwrap().to_string();
         vid.name=entry.path().file_name().unwrap().to_str().unwrap().to_string();
-        if(is_video(vid.path.clone())){
+        if is_video(vid.path.clone()){
             out_vid.push(vid);
         }
 

@@ -1,3 +1,4 @@
 /target
 **/*.rs.bk
 videos
+Cargo.lock
