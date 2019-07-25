@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
-use std::io;
 use std::fs::File;
 use std::io::Read;
-use std::io::prelude::*;
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 pub struct User{

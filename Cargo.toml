@@ -8,3 +8,5 @@ edition = "2018"
 actix-web="1.0"
 serde={version="*", features=["derive"]}
 serde_json="*"
+rust-argon2="0.4.0"
+rand="*"
