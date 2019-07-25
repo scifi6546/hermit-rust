@@ -1,4 +1,3 @@
-//mod config;
 mod videos;
 mod config;
 mod webserver;
