@@ -4,7 +4,7 @@ use argon2::{self,Config};
 pub struct User{
     pub name: String,
     password: String,
-    session: u32
+   session: u32
 }
 pub fn add_user(mut users_in:Vec<User>,
             username:String, password: String)->Vec<User>{
