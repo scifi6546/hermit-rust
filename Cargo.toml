@@ -5,7 +5,7 @@ authors = ["nick <scifi6546@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
-actix-web="1.0"
+actix-web="*"
 actix-session="*"
 actix-files="*"
 serde={version="*", features=["derive"]}
