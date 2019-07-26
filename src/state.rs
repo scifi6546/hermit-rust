@@ -1,8 +1,9 @@
 mod videos;
 mod config;
-use actix_web::{web,App,HttpResponse,HttpRequest,HttpServer,Responder,http::Method,Result};
+use actix_web::{middleware::Logger, web,App,HttpResponse,HttpRequest,HttpServer,Responder,http::Method,Result};
 use actix_session::{Session, CookieSession};
 use std::sync::Mutex;
+use log::debug;
 use actix_files;
 use serde::Deserialize;
 mod users;
@@ -57,12 +58,17 @@ fn init_state()->State{
 pub fn setup_webserver(state_in:&mut State){
     let temp_state = Mutex::new(state_in.clone());
     let mut shared_state = web::Data::new(temp_state);
+    std::env::set_var("RUST_LOG", "my_errors=debug,actix_web=info");
+    std::env::set_var("RUST_BACKTRACE", "1");
+	env_logger::init();
     HttpServer::new(move || {
         App::new().wrap(
             CookieSession::signed(&[0; 32]) // <- create cookie based session middleware
                     .secure(false)
-            ).register_data(shared_state.clone())
+            ).wrap( Logger::default())
+			.register_data(shared_state.clone())
             .route("/api/login",web::post().to(login))
+			.route("/api/add_user",web::post().to(add_user))
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/static","./static/"))
     })
@@ -85,9 +91,10 @@ struct UserReq{
 struct Test{
     foo:String
 }
-fn login(info: web::Json<UserReq>, data:web::Data<State>,session:Session)-> Result<String>{
+fn login(info: web::Json<UserReq>, data:web::Data<Mutex<State>>,session:Session)-> Result<String>{
     println!("Processed Username: {} Password: {}",info.username,info.password);
-    let auth=data.authUser(info.username.clone(),info.password.clone());
+	let mut state_data=data.lock().unwrap();
+    let auth=state_data.authUser(info.username.clone(),info.password.clone());
     if auth.is_ok(){
         println!("Authenticated Username: {} Password: {}",info.username,info.password);
         session.set("token",auth.unwrap());
@@ -100,7 +107,7 @@ fn login(info: web::Json<UserReq>, data:web::Data<State>,session:Session)-> Resu
     }
     return Ok("hello".to_string());
 }
-fn addUser(info:web::Json<UserReq>,data:web::Data<Mutex<State>>,session:Session)->Result<String>{
+fn add_user(info:web::Json<UserReq>,data:web::Data<Mutex<State>>,session:Session)->Result<String>{
     let token = session.get("token").unwrap().unwrap();
     let username = info.username.clone();
     let password = info.password.clone();
@@ -108,7 +115,6 @@ fn addUser(info:web::Json<UserReq>,data:web::Data<Mutex<State>>,session:Session)
     //use_data.wtf();
     let mut state_data = data.lock().unwrap();
     state_data.printUsers();
-    state_data.users.addUser("foo".to_string(),"bar".to_string());
     let res = state_data.addUser(username.clone(),password.clone(),token);
     if res.is_ok(){
         println!("Added Username: {} Password: {}",username,password);
@@ -116,13 +122,7 @@ fn addUser(info:web::Json<UserReq>,data:web::Data<Mutex<State>>,session:Session)
     }
     return Ok("failed".to_string());
 }
-pub fn index(data:web::Data<State>, session:Session)->impl Responder{
-    let res= data.authUser("foo".to_string(),"bar".to_string());
-    if(res.is_ok()){
-        let token:String = res.unwrap();
-        session.set("token",token.clone());
-        println!("added token: {}",token);
-    }
+pub fn index(data:web::Data<Mutex<State>>, session:Session)->impl Responder{
     HttpResponse::Ok().body("Hello World!")
         
 }
