@@ -36,8 +36,8 @@ pub fn setup_webserver(state_in:State){
             CookieSession::signed(&[0; 32]) // <- create cookie based session middleware
                     .secure(false)
             )
-            .route("/", web::get().to(index))
             .route("/api/login",web::post().to(login))
+            .route("/", web::get().to(index))
             .service(actix_files::Files::new("/static","./static/"))
     })
     .bind("127.0.0.1:8088")
