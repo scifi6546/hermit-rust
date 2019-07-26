@@ -2,6 +2,7 @@ mod videos;
 mod config;
 use actix_web::{web,App,HttpResponse,HttpRequest,HttpServer,Responder,http::Method,Result};
 use actix_session::{Session, CookieSession};
+use std::sync::Mutex;
 use actix_files;
 use serde::Deserialize;
 mod users;
@@ -9,7 +10,8 @@ mod users;
 pub struct State{
     config_file: config::Config,
     video_array: Vec<videos::Video>,
-    users: users::UserVec,
+    pub users: users::UserVec,
+
 }
 impl State{
     pub fn getVidDir(&self)->String{
@@ -42,19 +44,21 @@ fn init_state()->State{
     let vid_dir=temp_cfg.videos.video_path.clone();
     let mut out=State{
         config_file: temp_cfg,
-        video_array:videos::get_videos(vid_dir),
-        users:users::new(),
+        video_array: videos::get_videos(vid_dir),
+        users: users::new(),
     };
 
     return out;
 
 }
-pub fn setup_webserver(state_in:State){
+pub fn setup_webserver(state_in:&State){
+    let temp_state = Mutex::new(state_in.clone());
+    let mut shared_state = web::Data::new(temp_state);
     HttpServer::new(move || {
-        App::new().data(state_in.clone()).wrap(
+        App::new().wrap(
             CookieSession::signed(&[0; 32]) // <- create cookie based session middleware
                     .secure(false)
-            )
+            ).register_data(shared_state.clone())
             .route("/api/login",web::post().to(login))
             .route("/", web::get().to(index))
             .service(actix_files::Files::new("/static","./static/"))
@@ -93,10 +97,13 @@ fn login(info: web::Json<UserReq>, data:web::Data<State>,session:Session)-> Resu
     }
     return Ok("hello".to_string());
 }
-fn addUser(info: web::Json<UserReq>,mut data:web::Data<State>,session:Session)->Result<String>{
+fn addUser(info: &web::Json<UserReq>,data:web::Data<State>,session:Session)->Result<String>{
     let token = session.get("token").unwrap().unwrap();
     let username = info.username.clone();
     let password = info.password.clone();
+    //let use_data = data.get_ref().unwrap();
+    //use_data.wtf();
+    data.users.addUser("foo".to_string(),"bar".to_string());
     let res = data.addUser(username.clone(),password.clone(),token);
     if res.is_ok(){
         println!("Added Username: {} Password: {}",username,password);
