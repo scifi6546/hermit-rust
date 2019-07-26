@@ -37,6 +37,9 @@ impl State{
         self.users.addUser(username,password);
 
     }
+    pub fn printUsers(&self){
+        println!("{}",self.users.printUsers());    
+    }
 }
 fn init_state()->State{
     let temp_cfg=config::load_config();
@@ -51,7 +54,7 @@ fn init_state()->State{
     return out;
 
 }
-pub fn setup_webserver(state_in:&State){
+pub fn setup_webserver(state_in:&mut State){
     let temp_state = Mutex::new(state_in.clone());
     let mut shared_state = web::Data::new(temp_state);
     HttpServer::new(move || {
@@ -71,7 +74,7 @@ pub fn setup_webserver(state_in:&State){
 pub fn init(){
     let mut state_struct = init_state();
     state_struct.addRoot("root".to_string(),"password".to_string());
-    setup_webserver(state_struct);
+    setup_webserver(&mut state_struct);
 }
 #[derive(Deserialize)]
 struct UserReq{
@@ -97,14 +100,16 @@ fn login(info: web::Json<UserReq>, data:web::Data<State>,session:Session)-> Resu
     }
     return Ok("hello".to_string());
 }
-fn addUser(info: &web::Json<UserReq>,data:web::Data<State>,session:Session)->Result<String>{
+fn addUser(info:web::Json<UserReq>,data:web::Data<Mutex<State>>,session:Session)->Result<String>{
     let token = session.get("token").unwrap().unwrap();
     let username = info.username.clone();
     let password = info.password.clone();
     //let use_data = data.get_ref().unwrap();
     //use_data.wtf();
-    data.users.addUser("foo".to_string(),"bar".to_string());
-    let res = data.addUser(username.clone(),password.clone(),token);
+    let mut state_data = data.lock().unwrap();
+    state_data.printUsers();
+    state_data.users.addUser("foo".to_string(),"bar".to_string());
+    let res = state_data.addUser(username.clone(),password.clone(),token);
     if res.is_ok(){
         println!("Added Username: {} Password: {}",username,password);
         return Ok("sucess".to_string());

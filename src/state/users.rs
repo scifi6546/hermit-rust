@@ -74,6 +74,14 @@ impl UserVec{
         }
             return false;
     }
+    pub fn printUsers(&self)->String{
+        let mut out:String=String::new();
+        for user in self._users.clone(){
+            out.push_str(&user.name);
+            out.push('\n');
+        }
+        return out;
+    }
 }
 pub fn new()->UserVec{
     return UserVec{_users:[].to_vec()}; 
