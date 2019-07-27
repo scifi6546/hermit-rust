@@ -1,9 +1,32 @@
 use std::fs::{self};
+use serde::{Deserialize,Serialize};
 use std::path::Path;
 #[derive(Clone)]
 pub struct Video{
     path: String,
-    name: String
+    pub name: String
+}
+#[derive(Clone,Serialize,Deserialize)]
+pub struct Video_html{
+    pub name: String,
+    pub url: String,
+    pub thumbnail_url: String,
+	pub html_url:String,
+}
+impl Video{
+    pub fn getUrl(&self,path_base:String)->String{
+        let mut out:String = path_base.clone();
+        out.push_str(&self.name.clone());
+        return out;
+    }
+    pub fn getVid_html(&self,path_base:String)->Video_html{
+        return Video_html{
+            name:self.name.clone(),
+            url:self.getUrl(path_base.clone()),
+            thumbnail_url: "".to_string(),
+			html_url:self.getUrl(path_base),
+        };
+    }
 }
 fn is_video(path: String)->bool{
     return true;

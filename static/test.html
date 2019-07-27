@@ -4,6 +4,7 @@
 
 </head>
 	<script>
-		alert($.ajax({url:"/api/login",type:"POST",data:'{"username":"foo","password":"bar"}',contentType:"application/json",dataType:"json",mimeType:"application/json"}))
+		$.ajax({url:"/api/login",type:"POST",data:'{"username":"root","password":"password"}',contentType:"application/json",dataType:"json",mimeType:"application/json"});
+		var vids = $.ajax({url:"/api/videos",type:"GET",contentType:"application/json",dataType:"json",mimeType:"application/json"});
 		//$.ajax({url:"/api/login",type:"post",data:{"username":"foo","password":"bar"},dataType:"json"})
 	</script>

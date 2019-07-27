@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read,Write};
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
 pub struct User{
-    username: String,
-    passwd: String
+    pub username: String,
+    pub passwd: String
 }
 #[derive(Serialize, Deserialize)]
 #[derive(Clone)]
@@ -45,4 +45,10 @@ pub fn load_config()->Config{
     let config_out=result.unwrap();
     print_config(config_out.clone());
     return config_out
+}
+pub fn write_conf(input: Config)->std::io::Result<()>{
+    let mut file = File::create("config.json")?;
+    let write_string = serde_json::to_string(&input).unwrap();
+    file.write_all(&write_string.into_bytes());
+    return Ok(()); 
 }

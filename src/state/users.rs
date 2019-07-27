@@ -10,6 +10,11 @@ pub struct User{
 pub struct UserVec{
     _users:Vec<User>
 }
+#[derive(Clone)]
+pub struct User_conf{
+    pub username: String,
+    pub password: String,
+}
 impl UserVec{
     pub fn addUser(&mut self,username:String,password:String){
         let config=Config::default();
@@ -81,6 +86,16 @@ impl UserVec{
             out.push('\n');
         }
         return out;
+    }
+    pub fn retConfUsers(&self)->Vec<User_conf>{
+        let mut vec_out:Vec<User_conf> = Vec::new();
+        for user in self._users.clone(){
+            vec_out.push(User_conf{
+                username:user.name,
+                password:user.password
+                })
+        }
+        return vec_out;
     }
 }
 pub fn new()->UserVec{
