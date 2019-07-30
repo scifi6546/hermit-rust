@@ -10,8 +10,8 @@ use serde::{Serialize,Deserialize};
 mod users;
 #[derive(Clone)]
 pub struct State{
-    config_file: config::Config,
-    video_array: Vec<videos::Video>,
+    pub config_file: config::Config,
+    pub video_array: Vec<videos::Video>,
     pub users: users::UserVec,
 }
 impl State{
@@ -36,7 +36,7 @@ impl State{
 	pub fn getVideos(&self,user_token:String)->Vec<videos::Video_html>{
 		let mut out:Vec<videos::Video_html>=Vec::new();
 		for vid in self.video_array.clone(){
-			out.push(vid.getVid_html("/videos/".to_string()));	
+			out.push(vid.getVid_html("/videos/".to_string(),"/thumbnails/".to_string()));	
 		}
 		return out;
 	}
@@ -44,7 +44,7 @@ impl State{
 		if self.users.verifyToken(user_token){
 			for vid in self.video_array.clone(){
 				if vid.name==video_name{
-					return Ok(vid.getVid_html("/videos/".to_string()));
+					return Ok(vid.getVid_html("/videos/".to_string(),"/thumbnails/".to_string()));
 				}
 			}
 			return Err("not found".to_string());
@@ -55,6 +55,9 @@ impl State{
 	pub fn getVidDir(&self)->String{
 		return self.config_file.videos.video_path.clone();
 	}
+        pub fn getThumbDir(&self)->String{
+            return self.config_file.videos.thumbnails.clone();
+        }
     //adds the root user
     pub fn addRoot(&mut self,username:String,password: String){
         assert!(self.users.isEmpty());
@@ -84,21 +87,47 @@ lazy_static!{
 		tera
 	};
 }
-fn init_state()->State{
+fn init_state()->std::result::Result<State,String>{
     let temp_cfg=config::load_config();
+    if temp_cfg.is_ok(){
+        let cfg = temp_cfg.ok().unwrap();
+        let vid_dir=cfg.videos.video_path.clone();
 
-    let vid_dir=temp_cfg.videos.video_path.clone();
-    let mut out=State{
-        config_file: temp_cfg,
-        video_array: videos::get_videos(vid_dir),
-        users: users::new(),
-    };
+        let mut out=State{
+            config_file: cfg,
+            video_array: videos::get_videos(vid_dir,"thumbnails".to_string()),
+            users: users::new(),
+        };
 
-    return out;
+        return Ok(out);
+    }
+    println!("error: {}",temp_cfg.clone().err().unwrap());
+    return Err(temp_cfg.err().unwrap());
 
 }
-pub fn setup_webserver(state_in:&mut State){
+//returns an empty state
+fn empty_state()->State{
+    return State{
+        config_file: config::empty(),
+        video_array: [].to_vec(),
+        users: users::new()
+    }
+}
+//This runs the webserver used to setup hermit
+//
+pub fn setup_webserver()->State{
+    //todo
+    return empty_state();
+    let mut state:State =empty_state();
+    /*
+    HttpServer::new(move || {
+
+    }).bind("127.0.0.1:8088").unwrap().run().unwrap();
+    */
+}
+pub fn run_webserver(state_in:&mut State){
 	let video_dir = state_in.getVidDir();
+    let thumb_dir= state_in.getThumbDir();
     let temp_state = Mutex::new(state_in.clone());
     let mut shared_state = web::Data::new(temp_state);
     std::env::set_var("RUST_LOG", "my_errors=debug,actix_web=info");
@@ -115,8 +144,11 @@ pub fn setup_webserver(state_in:&mut State){
 			.route("/api/add_user",web::post().to(add_user))
 			.route("/vid_html/{name}",web::get().to(vid_html))
             .route("/", web::get().to(index))
+            .route("/login",web::get().to(login_html))
+
             .service(actix_files::Files::new("/static","./static/"))
-			.service(actix_files::Files::new("/videos",video_dir.clone()))
+        	.service(actix_files::Files::new("/videos",video_dir.clone()))
+            .service(actix_files::Files::new("/thumbnails",thumb_dir.clone()))
 			
     })
     .bind("127.0.0.1:8088")
@@ -126,8 +158,15 @@ pub fn setup_webserver(state_in:&mut State){
 }
 pub fn init(){
     let mut state_struct = init_state();
-    state_struct.addRoot("root".to_string(),"password".to_string());
-    setup_webserver(&mut state_struct);
+    if state_struct.is_ok(){
+        let mut state = state_struct.ok().unwrap();
+        state.addRoot("root".to_string(),"password".to_string());
+        run_webserver(&mut state);
+    }
+    println!("state not ok!");
+    let mut state = setup_webserver();
+    state.write();
+    run_webserver(&mut state);
 }
 #[derive(Deserialize)]
 struct UserReq{
@@ -190,11 +229,28 @@ pub fn index(data:web::Data<Mutex<State>>, session:Session)->impl Responder{
 		}
 	}else{
 		println!("not authorized");
+        return HttpResponse::TemporaryRedirect().header("Location", "/login").finish();
 	}
 	let mut out:String = "".to_string();
 
     HttpResponse::Ok().body(out)
         
+}
+#[derive(Serialize)]
+struct login_struct{
+
+}
+pub fn login_html(data:web::Data<Mutex<State>>, session:Session) -> impl Responder{
+    println!("ran redirect");
+    let mut state_data = data.lock().unwrap();
+    let mut html = TERA.render("login.jinja2",&login_struct{});
+    if html.is_ok(){
+        return HttpResponse::Ok().body(html.unwrap());
+    }
+    else{
+        println!("failed to render body");
+        return HttpResponse::InternalServerError().body("");
+    }
 }
 pub fn vid_html(data:web::Data<Mutex<State>>,session:Session,path: web::Path<(String,)>)->HttpResponse{
 

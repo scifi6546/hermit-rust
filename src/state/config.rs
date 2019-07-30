@@ -21,14 +21,29 @@ pub struct Config{
     pub videos:VideoConf
 
 }
-fn get_config()->std::io::Result<Config>{
+pub fn empty()->Config{
+    return Config{users:[].to_vec(),
+    videos:VideoConf{
+        video_path: "".to_string(),
+        thumbnails: "".to_string(),
+        playlists: [].to_vec(),
+    },
+    }
+}
+fn get_config()->std::result::Result<Config,String>{
     println!("ran?");
     
-    let mut file=File::open("config.json")?;
-    let mut string = String::new();
-    file.read_to_string(&mut string);
-    let config:Config = serde_json::from_str(&string).unwrap();
-    Ok(config)
+    let mut file=File::open("config.json");
+    if file.is_ok(){
+        let mut string = String::new();
+        file.unwrap().read_to_string(&mut string);
+        let config = serde_json::from_str(&string);
+        if config.is_ok(){
+            return Ok(config.unwrap());
+        }
+        return Err("config file not parsed".to_string());
+    }
+    return Err("config file not found".to_string());
 }
 fn print_config(input: Config){
     println!("Users: ");
@@ -40,11 +55,14 @@ fn print_config(input: Config){
     println!("  video_path: {}",input.videos.video_path);
     println!("  thumbnail_path: {}",input.videos.thumbnails);
 }
-pub fn load_config()->Config{
+pub fn load_config()->Result<Config,String>{
     let result=get_config();
-    let config_out=result.unwrap();
-    print_config(config_out.clone());
-    return config_out
+    if result.is_ok(){
+        let config_out=result.unwrap();
+        print_config(config_out.clone());
+        return Ok(config_out)
+    }
+    return Err(result.err().unwrap());
 }
 pub fn write_conf(input: Config)->std::io::Result<()>{
     let mut file = File::create("config.json")?;
