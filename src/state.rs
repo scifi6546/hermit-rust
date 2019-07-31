@@ -85,13 +85,6 @@ impl State{
             self.video_array=videos::get_videos(video_dir.clone(),"thumbnails".to_string());
             return Ok("done".to_string());
         }
-    //adds the root user
-    pub fn addRoot(&mut self,username:String,password: String){
-        assert!(self.users.isEmpty());
-        self.users.addUser(username,password);
-		self.write();
-
-    }
     pub fn printUsers(&self){
         println!("{}",self.users.printUsers());    
     }
@@ -121,11 +114,14 @@ fn init_state()->State{
         let vid_dir=cfg.videos.video_path.clone();
 
         let mut out=State{
-            config_file: cfg,
+            config_file: cfg.clone(),
             video_array: videos::get_videos(vid_dir,"thumbnails".to_string()),
             users: users::new(),
             is_setup: true,
         };
+        for user in cfg.users.clone(){
+            out.users.loadUser(user.username,user.passwd);
+        }
 
         return out;
     }

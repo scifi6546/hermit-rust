@@ -26,6 +26,11 @@ impl UserVec{
 
         self._users.push(user_temp);
     }
+    pub fn loadUser(&mut self,username:String,hashed_password:String)->Result<String,String>{
+        let user_temp = User{name:username,password:hashed_password,token:"".to_string()};
+        self._users.push(user_temp);
+        return Ok("sucess".to_string());
+    }
     pub fn verifyUser(&self,username:String,password:String)->bool{
         for user in self._users.clone(){
             if user.name==username {
@@ -56,6 +61,9 @@ impl UserVec{
     }
     //verifies a token
     pub fn verifyToken(&self,token:String)->bool{
+        if token==""{
+            return false;
+        }
         for user in self._users.clone(){
             if user.token==token{
                 return true;
