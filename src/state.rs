@@ -67,23 +67,23 @@ impl State{
             return self.is_setup;
         }
         pub fn setup(&mut self,video_dir:String, 
-                     thumbnail_dir:String,username:String, 
+                     username:String, 
                      password:String)->Result<String,String>{
             if self.is_setup{
                 return Err("already setup".to_string());
             }
-            self.reload_server(video_dir,thumbnail_dir);
+            self.reload_server(video_dir);
             self._addUser(username,password);
             self.is_setup=true;
             return Ok("Sucess".to_string());
 
         }
         pub fn reload_server(&mut self,video_dir:String, 
-                     thumbnail_dir:String)->Result<String,String>{
+                     )->Result<String,String>{
             self.config_file.videos.video_path=video_dir.clone();
-            self.config_file.videos.thumbnails=thumbnail_dir.clone();
-            self.video_array=videos::get_videos(video_dir.clone(),thumbnail_dir.clone());
-            return Ok("todo".to_string());
+            self.config_file.videos.thumbnails="thumbnails".to_string();
+            self.video_array=videos::get_videos(video_dir.clone(),"thumbnails".to_string());
+            return Ok("done".to_string());
         }
     //adds the root user
     pub fn addRoot(&mut self,username:String,password: String){
@@ -244,9 +244,9 @@ pub fn index(data:web::Data<Mutex<State>>, session:Session)->impl Responder{
 		let index_data=Index{
 			videos:state_data.getVideos(token)
 		};
-		let mut data = TERA.render("home.jinja2",&index_data);
-		if(data.is_ok()){
-			return HttpResponse::Ok().body(data.unwrap());
+		let mut out_data = TERA.render("home.jinja2",&index_data);
+		if out_data.is_ok(){
+			return HttpResponse::Ok().body(out_data.unwrap());
 		}else{
 			println!("data not rendered");
 		}
@@ -276,7 +276,7 @@ struct setup_struct{
 fn api_setup(info: web::Json<setup_struct>, data:web::Data<Mutex<State>>,
              session:Session)->Result<String>{
     let mut state_data = data.lock().unwrap();
-    state_data.setup(info.video_dir.clone(),info.thumbnail_dir.clone(),info.username.clone(),info.password.clone());
+    state_data.setup(info.video_dir.clone(),info.username.clone(),info.password.clone());
     return Ok("Sucess".to_string());
 }
 #[derive(Serialize)]

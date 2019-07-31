@@ -25,7 +25,7 @@ pub fn empty()->Config{
     return Config{users:[].to_vec(),
     videos:VideoConf{
         video_path: "".to_string(),
-        thumbnails: "".to_string(),
+        thumbnails: "thumbnails".to_string(),
         playlists: [].to_vec(),
     },
     }
