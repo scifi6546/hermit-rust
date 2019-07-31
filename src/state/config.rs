@@ -67,6 +67,7 @@ pub fn load_config()->Result<Config,String>{
 pub fn write_conf(input: Config)->std::io::Result<()>{
     let mut file = File::create("config.json")?;
     let write_string = serde_json::to_string(&input).unwrap();
+    println!("write_string: {}",write_string);
     file.write_all(&write_string.into_bytes());
     return Ok(()); 
 }

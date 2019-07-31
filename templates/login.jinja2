@@ -11,18 +11,24 @@
 	<a href="playlists" class="topnav_link">Playlists</a>
 </div>
 <div class="body">
-	<form action="javascript:test(foo);">
-		<input type="text" class="text_input" id="username">Username</input>	
-		<input type="password" class="password" id="password">Password</input>
-		<button class="submit">Submit</button>
-	</form>
+	<input type="text" class="text_input" id="username">Username</input>	
+	<button class="submit">Submit</button>
+	<input type="password" class="password" id="password">Password</input>
 	Hello World!
 </div>
 	<script>
 
 		console.log($(".submit"));
 		$(".submit")[0].onclick=function(p){
-			console.log(p);
+			var password = $(".password").val();
+			var username = $("#username").val();
+			output = {password:password,username:username};
+			output = JSON.stringify(output);
+			console.log(output);
+			console.log($(".password"));
+			console.log($("#username"));
+
+		$.ajax({url:"/api/login",type:"POST",data:output,contentType:"application/json",dataType:"json",mimeType:"application/json"});
 		}
 		function test(foo){
 			console.log(foo);
