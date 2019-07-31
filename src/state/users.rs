@@ -11,7 +11,7 @@ pub struct UserVec{
     _users:Vec<User>
 }
 #[derive(Clone)]
-pub struct User_conf{
+pub struct UserConf{
     pub username: String,
     pub password: String,
 }
@@ -22,7 +22,7 @@ impl UserVec{
             &get_salt(),&config).unwrap();
 
         let user_temp:User = User{name:username,
-            password:hash,token:self.makeToken()};
+            password:hash,token:"".to_string()};
 
         self._users.push(user_temp);
     }
@@ -31,16 +31,22 @@ impl UserVec{
         self._users.push(user_temp);
         return Ok("sucess".to_string());
     }
-    pub fn verifyUser(&self,username:String,password:String)->bool{
-        for user in self._users.clone(){
-            if user.name==username {
-                if argon2::verify_encoded(&user.password,
+    //if  verification is sucessfull returns string with token if failed returns error message
+    pub fn verifyUser(&mut self,username:String,password:String)->Result<String,String>{
+        for i in 0..self._users.len(){
+            if self._users[i].name==username{
+                if argon2::verify_encoded(&self._users[i].password,
                         &password.clone().into_bytes()).unwrap(){
-                    return true;
+                    println!("user sucessfully verified");
+                    self._users[i].token=self.makeToken();
+                    return Ok(self._users[i].token.clone());
+                }
+                else{
+                    println!("user not verified");
                 }
             }
         }
-        return false;
+        return Err("auth failed".to_string());
     }
     //generates a valid token
     fn makeToken(&self)->String{
@@ -89,16 +95,21 @@ impl UserVec{
     }
     pub fn printUsers(&self)->String{
         let mut out:String=String::new();
+        out.push_str("start users");
         for user in self._users.clone(){
+            out.push_str("username: ");
             out.push_str(&user.name);
+            out.push_str("  password: ");
+            out.push_str(&user.password);
             out.push('\n');
         }
+        out.push_str("end users");
         return out;
     }
-    pub fn retConfUsers(&self)->Vec<User_conf>{
-        let mut vec_out:Vec<User_conf> = Vec::new();
+    pub fn retConfUsers(&self)->Vec<UserConf>{
+        let mut vec_out:Vec<UserConf> = Vec::new();
         for user in self._users.clone(){
-            vec_out.push(User_conf{
+            vec_out.push(UserConf{
                 username:user.name,
                 password:user.password
                 })
@@ -109,21 +120,6 @@ impl UserVec{
 pub fn new()->UserVec{
     return UserVec{_users:[].to_vec()}; 
 }
-/*
-pub fn add_user(mut users_in:Vec<User>,
-            username:String, password: String)->Vec<User>{
-
-    let config=Config::default();
-    let hash=argon2::hash_encoded(&password.into_bytes(),
-        &get_salt(),&config).unwrap();
-
-    let user_temp:User = User{name:username,
-        password:hash,session:"".to_string()};
-
-    users_in.push(user_temp);
-    return users_in;
-}
-*/
 fn get_salt()->[u8;20]{
     let mut array:[u8;20]=[0;20];
     for i in 0..20{
@@ -131,16 +127,3 @@ fn get_salt()->[u8;20]{
     }
     return array;
 }
-/*
-pub fn verify_user(users_in:Vec<User>,username:String, password: String)->bool{
-    for user in users_in{
-        if user.name==username {
-            if argon2::verify_encoded(&user.password,
-                        &password.clone().into_bytes()).unwrap(){
-                return true;
-            }
-        }
-    }
-    return false;
-}
-*/

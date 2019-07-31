@@ -1,6 +1,9 @@
 use std::fs::{self};
 use serde::{Deserialize,Serialize};
 use std::path::Path;
+use std::thread;
+use std::sync::mpsc::channel;
+
 mod thumbnail;
 #[derive(Clone)]
 pub struct Video{
@@ -10,7 +13,7 @@ pub struct Video{
     pub thumbnail_name: String,
 }
 #[derive(Clone,Serialize,Deserialize)]
-pub struct Video_html{
+pub struct VideoHtml{
     pub name: String,
     pub url: String,
     pub thumbnail_url: String,
@@ -18,15 +21,17 @@ pub struct Video_html{
 }
 impl Video{
     pub fn getUrl(&self,path_base:String)->String{
-        return self.thumbnail_name.clone();
+        let mut out = path_base.clone();
+        out.push_str(&self.name.clone());
+        return out;
     }
     pub fn getThumb(&self,thumbnail_base: String)->String{
         let mut out:String = thumbnail_base.clone();
         out.push_str(&self.thumbnail_name.clone());
         return out;
     }
-    pub fn getVid_html(&self,path_base:String,thumbnail_base:String)->Video_html{
-        return Video_html{
+    pub fn getVid_html(&self,path_base:String,thumbnail_base:String)->VideoHtml{
+        return VideoHtml{
             name:self.name.clone(),
             url:self.getUrl(path_base.clone()),
             thumbnail_url: self.getThumb(thumbnail_base),
@@ -47,19 +52,12 @@ pub fn get_videos(read_dir:String,thumb_dir:String)->Vec<Video>{
     let path=Path::new(&read_dir);
     let mut out_vid:Vec<Video>=Vec::new();
     //Todo make thumbnail creation run in parallel
+    
     for entry in fs::read_dir(path).unwrap(){
         let entry = entry.unwrap();
-        println!("entry: {:?}",entry.path());
-        let vid_path_temp:&Path=Path::new(read_dir.as_str());
-        let vid_path = vid_path_temp.join(entry.file_name().to_str().unwrap());
-        let thumb_info = thumbnail::make_thumb(vid_path.to_str().unwrap().to_string(),thumb_dir.clone()).clone();
-        let mut vid = Video{path:"".to_string(),
-            name:"".to_string(),
-            thumbnail_path: thumb_info[0].clone(), 
-            thumbnail_name: thumb_info[1].clone(),
-            };
-        vid.path=entry.path().to_str().unwrap().to_string();
-        vid.name=entry.path().file_name().unwrap().to_str().unwrap().to_string();
+        //let foo = channel();
+        //foo.bar();
+        let vid = make_thumbnail(entry,read_dir.clone(),thumb_dir.clone());
         if is_video(vid.path.clone()){
             out_vid.push(vid);
         }
@@ -68,6 +66,20 @@ pub fn get_videos(read_dir:String,thumb_dir:String)->Vec<Video>{
     }
     print_videos(out_vid.clone());
     return out_vid;
+}
+fn make_thumbnail(video_entry: std::fs::DirEntry, vid_dir:String,thumb_dir:String)->Video{
+    let vid_path_temp:&Path=Path::new(vid_dir.as_str());
+    let vid_path = vid_path_temp.join(video_entry.file_name().to_str().unwrap());
+    let mut thumb_info:Vec<String>=[].to_vec();
+    let thumb_info = thumbnail::make_thumb(vid_path.to_str().unwrap().to_string(),thumb_dir.clone()).clone();
+    let mut vid = Video{path:"".to_string(),
+        name:"".to_string(),
+        thumbnail_path: thumb_info[0].clone(), 
+        thumbnail_name: thumb_info[1].clone(),
+        };
+    vid.path=video_entry.path().to_str().unwrap().to_string();
+    vid.name=video_entry.path().file_name().unwrap().to_str().unwrap().to_string();
+    return vid
 }
 fn print_videos(videos:Vec<Video>){
     for vid in videos{
