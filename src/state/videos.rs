@@ -10,7 +10,7 @@ pub struct Video{
     pub thumbnail_name: String,
 }
 #[derive(Clone,Serialize,Deserialize)]
-pub struct Video_html{
+pub struct VideoHtml{
     pub name: String,
     pub url: String,
     pub thumbnail_url: String,
@@ -25,8 +25,8 @@ impl Video{
         out.push_str(&self.thumbnail_name.clone());
         return out;
     }
-    pub fn getVid_html(&self,path_base:String,thumbnail_base:String)->Video_html{
-        return Video_html{
+    pub fn getVid_html(&self,path_base:String,thumbnail_base:String)->VideoHtml{
+        return VideoHtml{
             name:self.name.clone(),
             url:self.getUrl(path_base.clone()),
             thumbnail_url: self.getThumb(thumbnail_base),

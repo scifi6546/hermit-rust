@@ -1,8 +1,9 @@
 mod videos;
 mod config;
-use actix_web::{middleware::Logger, web,App,HttpResponse,HttpRequest,HttpServer,Responder,http::Method,Result};
+use actix_web::{middleware::Logger, web,App,HttpResponse,HttpServer,Responder,Result};
 use actix_session::{Session, CookieSession};
 use std::sync::Mutex;
+use std::sync::RwLock;
 use log::debug;
 use actix_files;
 use tera::Tera;
@@ -37,15 +38,15 @@ impl State{
         self.write();
         return Ok("sucess".to_string());
     }
-	pub fn getVideos(&self,user_token:String)->Vec<videos::Video_html>{
-		let mut out:Vec<videos::Video_html>=Vec::new();
+	pub fn getVideos(&self,user_token:String)->Vec<videos::VideoHtml>{
+		let mut out:Vec<videos::VideoHtml>=Vec::new();
 		for vid in self.video_array.clone(){
 			out.push(vid.getVid_html("/vid_html/".to_string(),"/thumbnails/".to_string()));	
 
 		}
 		return out;
 	}
-	pub fn getVidHtml(&self,user_token:String,video_name:String)->Result<videos::Video_html,String>{
+	pub fn getVidHtml(&self,user_token:String,video_name:String)->Result<videos::VideoHtml,String>{
 		if self.users.verifyToken(user_token){
 			for vid in self.video_array.clone(){
 				if vid.name==video_name{
@@ -194,7 +195,6 @@ fn login(info: web::Json<UserReq>, data:web::Data<Mutex<State>>,session:Session)
         return Ok("Login Failed".to_string());
 
     }
-    return Ok("hello".to_string());
 }
 fn add_user(info:web::Json<UserReq>,data:web::Data<Mutex<State>>,session:Session)->Result<String>{
     let token = session.get("token").unwrap().unwrap();
@@ -218,7 +218,7 @@ fn get_videos(data:web::Data<Mutex<State>>,session:Session)->impl Responder{
 }
 #[derive(Serialize)]
 struct Index{
-	videos: Vec<videos::Video_html>
+	videos: Vec<videos::VideoHtml>
 }
 pub fn index(data:web::Data<Mutex<State>>, session:Session)->impl Responder{
         println!("getting token");
@@ -236,7 +236,7 @@ pub fn index(data:web::Data<Mutex<State>>, session:Session)->impl Responder{
         if !state_data.isSetup(){
             return HttpResponse::TemporaryRedirect().header("Location","/setup").finish();
         }
-	if(auth){
+	if auth {
 		let index_data=Index{
 			videos:state_data.getVideos(token)
 		};
@@ -256,33 +256,33 @@ pub fn index(data:web::Data<Mutex<State>>, session:Session)->impl Responder{
         
 }
 pub fn setup(data:web::Data<Mutex<State>>,session:Session)->impl Responder{
-        let data = TERA.render("setup.jinja2",&empty_struct{}); 
+        let data = TERA.render("setup.jinja2",&EmptyStruct{}); 
         if data.is_ok(){
 	    return HttpResponse::Ok().body(data.unwrap());
         }
             return HttpResponse::TemporaryRedirect().header("Location","/setup").finish();
 }
 #[derive(Serialize,Deserialize)]
-struct setup_struct{
+struct SetupStruct{
     video_dir:String,
     thumbnail_dir:String,
     username:String,
     password:String,
 }
-fn api_setup(info: web::Json<setup_struct>, data:web::Data<Mutex<State>>,
+fn api_setup(info: web::Json<SetupStruct>, data:web::Data<Mutex<State>>,
              session:Session)->Result<String>{
     let mut state_data = data.lock().unwrap();
     state_data.setup(info.video_dir.clone(),info.username.clone(),info.password.clone());
     return Ok("Sucess".to_string());
 }
 #[derive(Serialize)]
-struct empty_struct{
+struct EmptyStruct{
 
 }
 pub fn login_html(data:web::Data<Mutex<State>>, session:Session) -> impl Responder{
     println!("ran redirect");
     let mut state_data = data.lock().unwrap();
-    let mut html = TERA.render("login.jinja2",&empty_struct{});
+    let mut html = TERA.render("login.jinja2",&EmptyStruct{});
     if html.is_ok(){
         return HttpResponse::Ok().body(html.unwrap());
     }
@@ -299,7 +299,7 @@ pub fn vid_html(data:web::Data<Mutex<State>>,session:Session,path: web::Path<(St
 	let vid_res = state_data.getVidHtml(token,vid_name.clone());
 	if vid_res.is_ok(){
 
-		let vid:videos::Video_html = vid_res.unwrap();
+		let vid:videos::VideoHtml = vid_res.unwrap();
 		let mut data=TERA.render("video.jinja2",&vid);
 		if data.is_ok(){
 			return HttpResponse::Ok().body(data.unwrap());

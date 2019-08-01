@@ -22,5 +22,4 @@ pub fn make_thumb(vid_dir:String,thumb_dir:String)->Vec<String>{
     println!("thumbnail_path: {}",thumb_path_str);
     return [thumb_path_str,vid_name].to_vec();
 
-    println!("Hello world");
 }
