@@ -18,9 +18,11 @@ pub struct State{
 }
 impl State{
     //returns cookie if user is suscessfully authenticated
-    pub fn authUser(&self,username:String,password:String)->Result<String,String>{
-        if self.users.verifyUser(username.clone(),password){
-            return Ok(self.users.getToken(username.clone()).unwrap())
+    pub fn authUser(&mut self,username:String,password:String)->Result<String,String>{
+        self.printUsers();
+        let auth_res = self.users.verifyUser(username.clone(),password);
+        if auth_res.is_ok(){
+            return Ok(auth_res.unwrap());
         }
         return Err("invalid credentials".to_string())
     }
@@ -38,13 +40,19 @@ impl State{
         self.write();
         return Ok("sucess".to_string());
     }
-	pub fn getVideos(&self,user_token:String)->Vec<videos::VideoHtml>{
-		let mut out:Vec<videos::VideoHtml>=Vec::new();
-		for vid in self.video_array.clone(){
-			out.push(vid.getVid_html("/vid_html/".to_string(),"/thumbnails/".to_string()));	
+	pub fn getVideos(&self,user_token:String)->Result<Vec<videos::VideoHtml>,String>{
+        if self.isAuth(user_token){ 
+		    let mut out:Vec<videos::VideoHtml>=Vec::new();
+        
+		    for vid in self.video_array.clone(){
+			    out.push(vid.getVid_html("/vid_html/".to_string(),"/thumbnails/".to_string()));	
 
-		}
-		return out;
+		    }
+		    return Ok(out);
+        }
+        else{
+		    return Err("not authorized".to_string());
+        }
 	}
 	pub fn getVidHtml(&self,user_token:String,video_name:String)->Result<videos::VideoHtml,String>{
 		if self.users.verifyToken(user_token){
@@ -87,6 +95,7 @@ impl State{
             return Ok("done".to_string());
         }
     pub fn printUsers(&self){
+        println!("Users: ");
         println!("{}",self.users.printUsers());    
     }
 	fn write(&mut self){
@@ -167,7 +176,7 @@ pub fn run_webserver(state_in:&mut State){
             .service(actix_files::Files::new("/thumbnails",thumb_dir.clone()))
 			
     })
-    .bind("127.0.0.1:8088")
+    .bind("0.0.0.0:8088")
     .unwrap()
     .run()
     .unwrap();
@@ -187,7 +196,9 @@ fn login(info: web::Json<UserReq>, data:web::Data<Mutex<State>>,session:Session)
     let auth=state_data.authUser(info.username.clone(),info.password.clone());
     if auth.is_ok(){
         println!("Authenticated Username: {} Password: {}",info.username,info.password);
-        session.set("token",auth.unwrap());
+        let token = auth.unwrap();
+        println!("token: {}",token.clone());
+        session.set("token",token);
         return Ok("logged in sucessfully".to_string());
     }
     else{
@@ -232,24 +243,21 @@ pub fn index(data:web::Data<Mutex<State>>, session:Session)->impl Responder{
         }
         println!("getting state data");
 	let mut state_data = data.lock().unwrap();
-	let auth = state_data.isAuth(token.clone());
-        if !state_data.isSetup(){
-            return HttpResponse::TemporaryRedirect().header("Location","/setup").finish();
-        }
-	if auth {
-		let index_data=Index{
-			videos:state_data.getVideos(token)
-		};
-		let mut out_data = TERA.render("home.jinja2",&index_data);
-		if out_data.is_ok(){
-			return HttpResponse::Ok().body(out_data.unwrap());
-		}else{
-			println!("data not rendered");
-		}
-	}else{
-		println!("not authorized");
-        return HttpResponse::TemporaryRedirect().header("Location", "/login").finish();
-	}
+    let index_data = state_data.getVideos(token); 
+    if index_data.is_ok(){
+	    let index_data=Index{
+	        videos:index_data.ok().unwrap()
+	    };
+	    let mut out_data = TERA.render("home.jinja2",&index_data);
+	    if out_data.is_ok(){
+		    return HttpResponse::Ok().body(out_data.unwrap());
+	    }else{
+		    println!("data not rendered");
+	    }
+    }
+    else{
+        return HttpResponse::TemporaryRedirect().header("location", "/login").finish();
+    }
 	let mut out:String = "".to_string();
 
     HttpResponse::Ok().body(out)

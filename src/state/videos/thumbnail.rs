@@ -12,9 +12,8 @@ pub fn make_thumb(vid_dir:String,thumb_dir:String)->Vec<String>{
     vid_name.push_str(".png"); 
     let thumb_path_final = thumb_dir_path.join(vid_name.as_str());
     println!("thumb_path_final: {}",thumb_path_final.to_str().unwrap());
-    let thumb_comand = Command::new("ffmpegthumbnailer");
     let thumb_path_str=thumb_path_final.to_str().unwrap().to_string();
-    let thumb_comand = Command::new("ffmpegthumbnailer").args(&["-i",vid_dir_path.to_str().unwrap(),
+    let thumb_comand = Command::new("ffmpegthumbnailer").args(&["-s","400","-i",vid_dir_path.to_str().unwrap(),
         "-o",thumb_path_final.to_str().unwrap()]).output();
     let output = thumb_comand.unwrap();
     println!("ffmpeg output: {}",String::from_utf8_lossy(&output.stdout));

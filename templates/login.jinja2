@@ -28,7 +28,15 @@
 			console.log($(".password"));
 			console.log($("#username"));
 
-		$.ajax({url:"/api/login",type:"POST",data:output,contentType:"application/json",dataType:"json",mimeType:"application/json"});
+		foo = $.ajax({url:"/api/login",type:"POST",data:output,contentType:"application/json",dataType:"json",mimeType:"application/json",async:false});
+			console.log(foo);
+			if(foo.responseText==="logged in sucessfully"){
+				console.log("changed wep page");
+				window.location="/";
+			}
+			console.log("response text: ");
+			console.log(foo.responseText);
+
 		}
 		function test(foo){
 			console.log(foo);
