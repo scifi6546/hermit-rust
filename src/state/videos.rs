@@ -39,8 +39,12 @@ impl Video{
         };
     }
 }
-fn is_video(path: String)->bool{
-    return true;
+fn is_video(path_str: String)->bool{
+    let path = Path::new(&path_str);
+    if path.is_file(){
+        return true; 
+    }
+    return false;
 }
 pub fn get_videos(read_dir:String,thumb_dir:String)->Vec<Video>{
     let path=Path::new(&read_dir);
@@ -57,8 +61,9 @@ pub fn get_videos(read_dir:String,thumb_dir:String)->Vec<Video>{
         let entry = entry.unwrap();
         //let foo = channel();
         //foo.bar();
-        let vid = make_thumbnail(entry,read_dir.clone(),thumb_dir.clone());
-        if is_video(vid.path.clone()){
+        let path_str:String = entry.path().to_str().unwrap().to_string();
+        if is_video(path_str){
+            let vid = make_thumbnail(entry,read_dir.clone(),thumb_dir.clone());
             out_vid.push(vid);
         }
 
