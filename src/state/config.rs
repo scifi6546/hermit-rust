@@ -33,12 +33,12 @@ pub fn empty()->Config{
 fn get_config()->std::result::Result<Config,String>{
     println!("ran?");
     
-    let mut file=File::open("config.json");
+    let file=File::open("config.json");
     if file.is_ok(){
         let mut string = String::new();
-        file.unwrap().read_to_string(&mut string);
+        let res = file.unwrap().read_to_string(&mut string);
         let config = serde_json::from_str(&string);
-        if config.is_ok(){
+        if config.is_ok() && res.is_ok(){
             return Ok(config.unwrap());
         }
         return Err("config file not parsed".to_string());
@@ -68,6 +68,5 @@ pub fn write_conf(input: Config)->std::io::Result<()>{
     let mut file = File::create("config.json")?;
     let write_string = serde_json::to_string(&input).unwrap();
     println!("write_string: {}",write_string);
-    file.write_all(&write_string.into_bytes());
-    return Ok(()); 
+    return file.write_all(&write_string.into_bytes());
 }

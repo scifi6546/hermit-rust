@@ -20,31 +20,38 @@ pub struct VideoHtml{
     pub html_url:String,
 }
 impl Video{
-    pub fn getUrl(&self,path_base:String)->String{
+    pub fn get_url(&self,path_base:String)->String{
         let mut out = path_base.clone();
         out.push_str(&self.name.clone());
         return out;
     }
-    pub fn getThumb(&self,thumbnail_base: String)->String{
+    pub fn get_thumb(&self,thumbnail_base: String)->String{
         let mut out:String = thumbnail_base.clone();
         out.push_str(&self.thumbnail_name.clone());
         return out;
     }
-    pub fn getVid_html(&self,path_base:String,thumbnail_base:String)->VideoHtml{
+    pub fn get_vid_html(&self,path_base:String,thumbnail_base:String)->VideoHtml{
         return VideoHtml{
             name:self.name.clone(),
-            url:self.getUrl(path_base.clone()),
-            thumbnail_url: self.getThumb(thumbnail_base),
-			html_url:self.getUrl(path_base),
+            url:self.get_url(path_base.clone()),
+            thumbnail_url: self.get_thumb(thumbnail_base),
+			html_url:self.get_url(path_base),
         };
     }
 }
 fn is_video(path_str: String)->bool{
     let path = Path::new(&path_str);
-    if path.is_file(){
-        return true; 
+    let ext_opt = path.extension();
+    let mut extension = "".to_string();
+    if ext_opt.is_some(){
+        let foo = ext_opt.unwrap();
+        extension=foo.to_str().unwrap().to_string();
     }
-    return false;
+    if path.is_file() && (extension=="m4v".to_string() || extension=="ogg".to_string() || extension=="mp4".to_string()){
+        return true; 
+    }else{
+        return false;
+    }
 }
 pub fn get_videos(read_dir:String,thumb_dir:String)->Vec<Video>{
     let path=Path::new(&read_dir);
@@ -75,7 +82,6 @@ pub fn get_videos(read_dir:String,thumb_dir:String)->Vec<Video>{
 fn make_thumbnail(video_entry: std::fs::DirEntry, vid_dir:String,thumb_dir:String)->Video{
     let vid_path_temp:&Path=Path::new(vid_dir.as_str());
     let vid_path = vid_path_temp.join(video_entry.file_name().to_str().unwrap());
-    let mut thumb_info:Vec<String>=[].to_vec();
     let thumb_info = thumbnail::make_thumb(vid_path.to_str().unwrap().to_string(),thumb_dir.clone()).clone();
     let mut vid = Video{path:"".to_string(),
         name:"".to_string(),

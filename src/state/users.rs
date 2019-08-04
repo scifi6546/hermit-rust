@@ -16,7 +16,7 @@ pub struct UserConf{
     pub password: String,
 }
 impl UserVec{
-    pub fn addUser(&mut self,username:String,password:String){
+    pub fn add_user(&mut self,username:String,password:String){
         let config=Config::default();
         let hash=argon2::hash_encoded(&password.into_bytes(),
             &get_salt(),&config).unwrap();
@@ -26,19 +26,28 @@ impl UserVec{
 
         self._users.push(user_temp);
     }
-    pub fn loadUser(&mut self,username:String,hashed_password:String)->Result<String,String>{
+    pub fn load_user(&mut self,username:String,hashed_password:String)->Result<String,String>{
         let user_temp = User{name:username,password:hashed_password,token:"".to_string()};
         self._users.push(user_temp);
         return Ok("sucess".to_string());
     }
+    pub fn logout(&mut self,token:String)->Result<String,String>{
+        for i in 0..self._users.len(){
+            if self._users[i].token==token{
+                self._users[i].token="".to_string();
+                return Ok("success".to_string());
+            }
+        }
+        return Err("user not found".to_string());
+    }
     //if  verification is sucessfull returns string with token if failed returns error message
-    pub fn verifyUser(&mut self,username:String,password:String)->Result<String,String>{
+    pub fn verify_user(&mut self,username:String,password:String)->Result<String,String>{
         for i in 0..self._users.len(){
             if self._users[i].name==username{
                 if argon2::verify_encoded(&self._users[i].password,
                         &password.clone().into_bytes()).unwrap(){
                     println!("user sucessfully verified");
-                    self._users[i].token=self.makeToken();
+                    self._users[i].token=self.make_token();
                     return Ok(self._users[i].token.clone());
                 }
                 else{
@@ -49,24 +58,24 @@ impl UserVec{
         return Err("auth failed".to_string());
     }
     //generates a valid token
-    fn makeToken(&self)->String{
-        let TOKEN_LEN = 20;
+    fn make_token(&self)->String{
+        let token_len = 20;
         let mut token:String=String::new();
-        token.reserve(TOKEN_LEN);
-        for i in 0..TOKEN_LEN{
+        token.reserve(token_len);
+        for _i in 0..token_len{
             token.push(rand::random::<char>());
         }
         //making sure that token is not already used
         for user in self._users.clone(){
             if user.token==token{
                 //returning new random token
-                return self.makeToken();
+                return self.make_token();
             }
         }
         return token;
     }
     //verifies a token
-    pub fn verifyToken(&self,token:String)->bool{
+    pub fn verify_token(&self,token:String)->bool{
         if token==""{
             return false;
         }
@@ -78,7 +87,7 @@ impl UserVec{
         return false;
 
     }
-    pub fn getToken(&self,username:String)->Result<String,String>{
+    pub fn get_token(&self,username:String)->Result<String,String>{
         for user in self._users.clone(){
             if username==user.name{
                 return Ok(user.token);
@@ -87,13 +96,13 @@ impl UserVec{
         return Err("user not found".to_string());
     }
     //checks if the structer is empty
-    pub fn isEmpty(&self)->bool{
+    pub fn is_empty(&self)->bool{
         if self._users.is_empty(){
             return true;
         }
             return false;
     }
-    pub fn printUsers(&self)->String{
+    pub fn print_users(&self)->String{
         let mut out:String=String::new();
         out.push_str("start users");
         for user in self._users.clone(){
@@ -106,7 +115,7 @@ impl UserVec{
         out.push_str("end users");
         return out;
     }
-    pub fn retConfUsers(&self)->Vec<UserConf>{
+    pub fn ret_conf_users(&self)->Vec<UserConf>{
         let mut vec_out:Vec<UserConf> = Vec::new();
         for user in self._users.clone(){
             vec_out.push(UserConf{
