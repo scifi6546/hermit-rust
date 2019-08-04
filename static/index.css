@@ -42,6 +42,9 @@ html{
 	overflow: hidden;
 	
 }
+.form_body{
+	display: grid;
+}
 .topnav_link{
 	float: left;
 	padding: 12px;
