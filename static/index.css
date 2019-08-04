@@ -3,6 +3,9 @@
 	display: block;
 	padding: 15px;
 }
+video{
+	width: 100%;
+}
 .video_div a{
 	width:100%;
 }
@@ -12,6 +15,7 @@
 }
 html{
 	background-color: #242327;
+	-webkit-text-size-adjust: none;
 }
 .body{
 	background-color: #3c3b42;
@@ -40,21 +44,21 @@ html{
 }
 .topnav_link{
 	float: left;
-	padding: 16px;
+	padding: 12px;
 	text-align:center;
 	vertical-align: center;
 	text-decoration: none;
 	color: #ffffff;
-	font-size: 16px;
+	font-size: 12px;
 }
 .topnav_active{
 	float: left;
-	padding: 16px;
+	padding: 12px;
 	text-align:center;
 	vertical-align: center;
 	text-decoration: none;
 	color: #ffffff;
-	font-size: 16px;
+	font-size: 12px;
 	background-color: #8c8e99;
 }
 .topnav a:hover{
@@ -72,4 +76,10 @@ html{
 }
 .playlist_add{
 	width: 100%;
+}
+@media only screen and (max-width: 400px){
+	
+	[class*="body"]{
+		grid-template-columns:auto;
+	}
 }
